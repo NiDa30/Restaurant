@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:restaurant/screens/Manage_recipe/management_screen.dart';
+import 'package:restaurant/screens/Suggestion/suggetion_screen.dart';
 import 'package:restaurant/widgets/recipe_card.dart'; // Giả sử bạn có widget này để hiển thị món ăn
 import 'package:restaurant/screens/Manage_recipe/management_screen.dart'; // Giả sử bạn có màn hình quản lý thực đơn
 import 'search_screen.dart'; // Màn hình tìm kiếm
+import 'package:restaurant/screens/Suggestion/SuggetionState_screen.dart';
+import 'package:restaurant/screens/favorite/favorite_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -35,13 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     ),
     // Màn hình yêu thích (hiển thị thông báo danh sách yêu thích)
-    Center(
-      child: Text('⭐ Danh sách yêu thích', style: TextStyle(fontSize: 20)),
-    ),
+    // FavoriteScreen(favorites: favorites),
     // Màn hình quản lý thực đơn
     MenuManagementScreen(),
     // Màn hình tìm kiếm
     SearchScreen(),
+    SuggestionScreen(),
   ];
 
   // Cập nhật index khi người dùng chọn tab
@@ -64,15 +66,19 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Yêu thích',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.favorite),
+          //   label: 'Yêu thích',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.menu_book),
             label: 'Quản lý thực đơn',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Tìm kiếm'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_suggest_rounded),
+            label: 'gợi ý',
+          ),
         ],
       ),
     );

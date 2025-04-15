@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import for rootBundle
-import 'package:restaurant/models/dish.dart'; // Import model Dish
+import 'package:flutter/services.dart';
 import 'dart:convert';
+import 'package:restaurant/models/dish.dart';
+import 'package:restaurant/screens/favorite/favorite_screen.dart';
 
 class SuggestionScreen extends StatefulWidget {
   @override
@@ -9,40 +10,36 @@ class SuggestionScreen extends StatefulWidget {
 }
 
 class _SuggestionScreenState extends State<SuggestionScreen> {
-  // Các lựa chọn sở thích của người dùng
-  String? selectedCuisine; // Loại món ăn (Ẩm thực)
-  String? selectedIngredient; // Nguyên liệu yêu thích
-  List<Dish> dishes = []; // Danh sách món ăn đã tải
+  String? selectedCuisine;
+  String? selectedIngredient;
+  List<Dish> dishes = [];
+  List<Dish> menu = [];
+  List<Dish> favorites = [];
 
   @override
   void initState() {
     super.initState();
-    loadDishes(); // Tải danh sách món ăn khi mở màn hình
+    loadDishes();
   }
 
-  // Tải món ăn từ file JSON hoặc API
   Future<void> loadDishes() async {
-    // Đọc tệp JSON từ assets
-    String jsonString = await rootBundle.loadString('assets/data/test.json');
-
-    // Chuyển đổi chuỗi JSON thành danh sách các món ăn
-    List<dynamic> jsonResponse = json.decode(jsonString);
-
-    // Tạo danh sách các món ăn từ JSON
-    List<Dish> loadedDishes =
-        jsonResponse.map((dish) => Dish.fromJson(dish)).toList();
-
-    setState(() {
-      dishes = loadedDishes; // Cập nhật danh sách món ăn
-    });
+    try {
+      String jsonString = await rootBundle.loadString('assets/data/test.json');
+      List<dynamic> jsonResponse = json.decode(jsonString);
+      List<Dish> loadedDishes =
+          jsonResponse.map((dish) => Dish.fromJson(dish)).toList();
+      setState(() {
+        dishes = loadedDishes;
+      });
+    } catch (e) {
+      print("Lỗi khi tải dữ liệu món ăn: $e");
+    }
   }
 
-  // Lọc món ăn dựa trên sở thích của người dùng
   List<Dish> getSuggestedDishes() {
     return dishes.where((dish) {
       bool matchesCuisine =
-          selectedCuisine == null ||
-          dish.ingredients.contains(selectedCuisine!);
+          selectedCuisine == null || dish.cuisine == selectedCuisine;
       bool matchesIngredient =
           selectedIngredient == null ||
           dish.ingredients.contains(selectedIngredient!);
@@ -50,12 +47,102 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
     }).toList();
   }
 
+  void addToMenu(Dish dish) {
+    setState(() {
+      if (!menu.contains(dish)) {
+        menu.add(dish);
+      }
+      if (!favorites.contains(dish)) {
+        favorites.add(dish);
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Đã thêm "${dish.name}" vào thực đơn và danh sách yêu thích!',
+        ),
+      ),
+    );
+  }
+
+  void addToFavorites(Dish dish) {
+    setState(() {
+      if (!favorites.contains(dish)) {
+        favorites.add(dish);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã thêm "${dish.name}" vào danh sách yêu thích!'),
+      ),
+    );
+  }
+
+  void showMenuDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: Text('Thực đơn của bạn'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children: menu.map((dish) => Text('• ${dish.name}')).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text('Đóng'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void showFavoritesDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: Text('Danh sách yêu thích'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                shrinkWrap: true,
+                children:
+                    favorites.map((dish) => Text('• ${dish.name}')).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text('Đóng'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gợi ý theo sở thích'),
-        leading: Icon(Icons.menu), // Biểu tượng menu
+        title: Text('Gợi ý món ăn theo sở thích'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.favorite),
+            tooltip: 'Danh sách yêu thích',
+            onPressed: showFavoritesDialog,
+          ),
+          IconButton(
+            icon: Icon(Icons.menu_book),
+            tooltip: 'Thực đơn',
+            onPressed: showMenuDialog,
+          ),
+        ],
       ),
       body: Column(
         children: <Widget>[
@@ -65,7 +152,7 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
               value: selectedCuisine,
               hint: Row(
                 children: [
-                  Icon(Icons.fastfood), // Biểu tượng món ăn
+                  Icon(Icons.fastfood),
                   SizedBox(width: 8),
                   Text('Chọn loại món ăn'),
                 ],
@@ -90,7 +177,7 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
               value: selectedIngredient,
               hint: Row(
                 children: [
-                  Icon(Icons.restaurant), // Biểu tượng nguyên liệu
+                  Icon(Icons.restaurant),
                   SizedBox(width: 8),
                   Text('Chọn nguyên liệu yêu thích'),
                 ],
@@ -114,15 +201,54 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
               itemCount: getSuggestedDishes().length,
               itemBuilder: (context, index) {
                 var dish = getSuggestedDishes()[index];
-                return ListTile(
-                  leading: Icon(Icons.food_bank), // Biểu tượng món ăn
-                  title: Text('Món ăn ${dish.id}'),
-                  subtitle: Text(dish.ingredients.join(", ")),
+                return Card(
+                  margin: EdgeInsets.all(8.0),
+                  child: ListTile(
+                    leading: Icon(Icons.food_bank),
+                    title: Text(dish.name),
+                    subtitle: Text(
+                      'Nguyên liệu: ${dish.ingredients.join(", ")} - ${dish.cuisine}',
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: () => addToMenu(dish),
+                          tooltip: 'Thêm vào thực đơn',
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.favorite),
+                          tooltip: 'Thêm vào danh sách yêu thích',
+                          onPressed: () => addToFavorites(dish),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.restaurant_menu),
+            label: 'Thực đơn (${menu.length})',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: 'Yêu thích (${favorites.length})',
+          ),
+        ],
+        onTap: (index) {
+          if (index == 0) {
+            showMenuDialog();
+          } else if (index == 1) {
+            showFavoritesDialog();
+          }
+        },
       ),
     );
   }
